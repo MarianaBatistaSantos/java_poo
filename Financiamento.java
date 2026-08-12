@@ -1,16 +1,15 @@
 package modelo;
+import util.AumentoMaiorDoQueJurosException;
+import java.io.Serializable;
 
 
-public class Financiamento {
+public abstract class Financiamento implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     //atributos
-    private double valorImovel;
-    private int prazoFinanciamento;
-    private double taxaJurosAnual;
-
-    //          *IDEAIS*
-    //colocar futuramente mais coisas como infos do cliente, lista de parcelas pagas e pendentes e horaio e tudo registrado,
-    //e local do imovel (usar algo aleatorio para sortear uma regiao, ter varias regioes listadas)
-
+    protected double valorImovel;
+    protected int prazoFinanciamento;
+    protected double taxaJurosAnual;
 
     //construtor 
     public Financiamento(double valorImovel, int prazoFinanciamento, double taxaJurosAnual) {
@@ -30,24 +29,18 @@ public class Financiamento {
         return this.taxaJurosAnual;
     }
 
-    //metodo 1
-    public double calcularPagamentoMensal() {
-        return (this.valorImovel / (this.prazoFinanciamento * 12)) * (1 + (this.taxaJurosAnual / 12));
-    }
+    public abstract double calcularPagamentoMensal() throws AumentoMaiorDoQueJurosException;
 
-    //metodo 2
-    public double calcularValorTotal() {
+    public double calcularValorTotal() throws AumentoMaiorDoQueJurosException {
         return this.calcularPagamentoMensal() * this.prazoFinanciamento * 12;
     }
 
-    //metodo 3 exibicao das infos 
-    public void exibirDadosFinanciamento() {
+    public void exibirDadosFinanciamento() throws AumentoMaiorDoQueJurosException {
         System.out.println("\n===== * DADOS DO FINANCIAMENTO * =====");
         System.out.printf("Valor do imóvel:      R$ %,.2f%n", this.valorImovel);
         System.out.printf("Prazo:                %d anos%n", this.prazoFinanciamento);
-        System.out.printf("Taxa de juros anual:  %.2f%%%n", this.taxaJurosAnual);
-        System.out.printf("Parcela mensal:       R$ %,.2f%n", this.calcularPagamentoMensal());
-        System.out.printf("Valor total pago:     R$ %,.2f%n", this.calcularValorTotal());
-        System.out.println("======================================\n");
-}
+        System.out.printf("Taxa de juros anual:  %.2f%%%n", this.taxaJurosAnual * 100);
+        System.out.printf("Pagamento mensal:     R$ %,.2f%n", this.calcularPagamentoMensal());
+        System.out.printf("Valor total do pag:   R$ %,.2f%n", this.calcularValorTotal());
+    }
 }

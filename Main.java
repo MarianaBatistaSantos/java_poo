@@ -1,5 +1,10 @@
-import modelo.Terreno;
+package main;
+
+import modelo.Financiamento;
+import util.AumentoMaiorDoQueJurosException;
+import util.GerenciadorArquivo;
 import util.InterfaceUsuario;
+import util.GerenciadorTexto;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,31 +13,53 @@ public class Main {
     public static void main(String[] args) {
 
         InterfaceUsuario interfaceUsuario = new InterfaceUsuario();
+        
+        interfaceUsuario.infosBemVindo();
         interfaceUsuario.infosAlertaLimites();
         
         List<Financiamento> listaFinanciamentos = new ArrayList<>();
 
-        Casa casa1 = new Casa(500000, 10, 0.10, 120.5, 250.0);
-        Casa casa2 = new Casa(300000, 15, 0.08, 90.0, 180.0);     
+        int qtdTotal = interfaceUsuario.pedirQuantidadeFinanciamentos();
 
-        Apartamento apto1 = new Apartamento(400000, 20, 0.09, 2, 5);
-        Apartamento apto2 = new Apartamento(250000, 12, 0.07, 1, 3);
+        for (int i = 1; i <= qtdTotal; i++) {
+            
+            char tipo = interfaceUsuario.pedirTipoFinanciamento(i);
 
-        double valorImovel = interfaceUsuario.valorimovelForfinanciamento();
-        int prazoFinanciamento = interfaceUsuario.prazofinanciamentoForfinanciamento();
-        double taxaJurosAnual = interfaceUsuario.taxajurosanualForfinanciamento();
+            GerenciadorTexto.exibirCabecalhoEntradaDados(i);
+            double valorImovel = interfaceUsuario.valorimovelForfinanciamento();
+            int prazoFinanciamento = interfaceUsuario.prazofinanciamentoForfinanciamento();
+            double taxaJurosAnual = interfaceUsuario.taxajurosanualForfinanciamento();
 
-        Terreno terrenoDigitado = new Terreno(valorImovel, prazoFinanciamento, taxaJurosAnual / 100, "Residencial");
+            switch (tipo) {
+                case 'c':
+                    double area = interfaceUsuario.pedirAreaConstruida();
+                    double terrenoSize = interfaceUsuario.pedirTamanhoTerreno();
+                    listaFinanciamentos.add(new modelo.Casa(valorImovel, prazoFinanciamento, taxaJurosAnual / 100, area, terrenoSize));
+                    break;
 
-        listaFinanciamentos.add(casa1);
-        listaFinanciamentos.add(casa2);
-        listaFinanciamentos.add(apto1);
-        listaFinanciamentos.add(apto2);
-        listaFinanciamentos.add(terrenoDigitado);
+                case 'a':
+                    int vagas = interfaceUsuario.pedirVagasGaragem();
+                    int andar = interfaceUsuario.pedirAndar();
+                    listaFinanciamentos.add(new modelo.Apartamento(valorImovel, prazoFinanciamento, taxaJurosAnual / 100, vagas, andar));
+                    break;
+
+                case 't':
+                    String zona = interfaceUsuario.pedirTipoZona();
+                    listaFinanciamentos.add(new modelo.Terreno(valorImovel, prazoFinanciamento, taxaJurosAnual / 100, zona));
+                    break;
+            }
+        }
+
+        GerenciadorTexto.exibirCabecalhoRelatorioGeral();
 
         for (int i = 0; i < listaFinanciamentos.size(); i++) {
-            System.out.println("======== * FINANCIAMENTO " + (i + 1) + " * =========");
-           listaFinanciamentos.get(i).exibirDadosFinanciamento();
+            try {
+                GerenciadorTexto.exibirDivisorFinanciamento(i + 1);
+                listaFinanciamentos.get(i).exibirDadosFinanciamento();
+            } 
+            catch (AumentoMaiorDoQueJurosException e) {
+                GerenciadorTexto.exibirErroImpressao(e.getMessage());
+            }
         }
 
         double totalImoveis = 0;
@@ -40,12 +67,30 @@ public class Main {
 
         for (Financiamento f : listaFinanciamentos) {
             totalImoveis += f.getValorImovel();
-            totalFinanciamentos += f.calcularValorTotal();
+            try {
+                totalFinanciamentos += f.calcularValorTotal();
+            } 
+            catch (AumentoMaiorDoQueJurosException e) {
+                GerenciadorTexto.exibirAvisoExclusaoSoma();
+            }
         }
 
-        System.out.println("========= * TOTAIS * =================");
-        System.out.printf("Total de todos os imóveis:        R$ %,.2f%n", totalImoveis);
-        System.out.printf("Total de todos os financiamentos: R$ %,.2f%n", totalFinanciamentos);
-        System.out.println("======================================");
+        GerenciadorTexto.exibirResumoTotais(totalImoveis, totalFinanciamentos);
+        GerenciadorArquivo.salvarTexto("financiamentos.txt", listaFinanciamentos);
+        GerenciadorArquivo.salvarSerializacao("financiamentos.ser", listaFinanciamentos);
+        GerenciadorArquivo.lerTexto("financiamentos.txt");
+
+        List<Financiamento> listaRecuperada = GerenciadorArquivo.lerSerializacao("financiamentos.ser");
+        
+        GerenciadorTexto.exibirCabecalhoComprovacaoSerializado();
+        for (Financiamento f : listaRecuperada) {
+            try {
+                f.exibirDadosFinanciamento();
+            }
+            catch (AumentoMaiorDoQueJurosException e) {
+                GerenciadorTexto.exibirErroImpressao(e.getMessage());
+            }
+        }
+        GerenciadorTexto.exibirRodapeFinal();
     }
 }
